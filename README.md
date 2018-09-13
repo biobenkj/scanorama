@@ -20,13 +20,14 @@ Change into the repository directory:
 cd scanorama/
 ```
 
-And install the required dependencies with the command:
+And install Scanorama with the following command
 ```
-python -m pip install -r requirements.txt
+python setup.py install --user
 ```
 
-Scanorama has been tested with Python 2.7 using the following packages:
+Scanorama has been tested with Python 2.7 and 3.5 using the following packages:
 * [annoy](https://github.com/spotify/annoy) (1.11.5)
+* [fbpca](https://fbpca.readthedocs.io/en/latest/) (1.0)
 * [intervaltree](https://github.com/chaimleib/intervaltree) (2.1.0)
 * [numpy](http://www.numpy.org/) (1.11.2)
 * [scipy](https://www.scipy.org/) (1.0.0)
@@ -53,11 +54,11 @@ The second is a sparse matrix format used by 10X Genomics (example [here](http:/
 
 To ensure a consistent data format, Scanorama first processes these raw files and saves them in numpy archive files. To generate these files, run the command:
 ```
-python bin/process.py
+python bin/process.py conf/panorama.txt
 ```
 The corresponding `.npz` files will be saved in the `data/` directory.
 
-New files can be processed by modifying the `data_names` variables at the top of `bin/process.py`.
+New files can be processed by feeding them into `bin/process.py` via the command line or a configuration file, or by modifying the `data_names` variables at the top of `bin/config.py`.
 
 Currently, Scanorama uses a relatively low-level data representation (for Python at least) where a list of numpy arrays holds the gene expression values for each data set.
 
@@ -75,9 +76,9 @@ By default, this prints a log reporting the alignments the algorithm has found b
 
 We can also stitch a much larger number of cells from many more datsets. To do this, run:
 ```
-python bin/panorama.py
+python bin/panorama.py conf/panorama.txt
 ```
-The collection of datasets to be integrated is specified in the `data_names` variable in `bin/config.py`. Default parameters are listed at the top of `bin/scanorama.py`.
+The collection of datasets to be integrated is specified in the config file `conf/panorama.txt`. Default parameters are listed at the top of `bin/scanorama.py`.
 
 By default, this script will output a verbose log as it finds alignments and applies batch correction. At the end, it will automatically save t-SNE visualized images of the integrated result. The numpy matrices containing the batch-corrected data sets are also available (in memory) to integrate with other single cell pipelines and packages.
 
@@ -105,7 +106,7 @@ The script `bin/simulation.py` tests the integrative performance of the method o
 
 #### Scanorama implementation
 
-For those interested in the real meaty bit of the code, look in `bin/scanorama.py` which handles the mutual nearest neighbors-based matching, batch correction, and panorama assembly.
+For those interested in the algorithm implementation, `scanorama/scanorama.py` is the main file that handles the mutual nearest neighbors-based matching, batch correction, and panorama assembly.
 
 ## Questions
 

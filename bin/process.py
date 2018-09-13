@@ -1,10 +1,12 @@
-from config import data_names
-
 import gzip
 import numpy as np
 import os.path
 from sklearn.preprocessing import normalize
 import sys
+
+from scanorama import merge_datasets
+
+MIN_TRANSCRIPTS = 600
 
 def load_tab(fname, max_genes=40000):
     if fname.endswith('.gz'):
@@ -51,7 +53,7 @@ def load_mtx(dname):
 
     return X, np.array(genes)
 
-def process_tab(fname, min_trans=600):
+def process_tab(fname, min_trans=MIN_TRANSCRIPTS):
     X, cells, genes = load_tab(fname)
 
     gt_idx = [ i for i, s in enumerate(np.sum(X != 0, axis=1))
@@ -69,7 +71,7 @@ def process_tab(fname, min_trans=600):
 
     return X, cells, genes
 
-def process_mtx(dname, min_trans=600):
+def process_mtx(dname, min_trans=MIN_TRANSCRIPTS):
     X, genes = load_mtx(dname)
 
     gt_idx = [ i for i, s in enumerate(np.sum(X != 0, axis=1))
@@ -118,36 +120,31 @@ def load_names(data_names, norm=True, log1p=False, verbose=True):
 
     return datasets, genes_list, n_cells
 
-def merge_datasets(datasets, genes, verbose=True):
-    # Find genes in common.
-    keep_genes = set()
-    for gene_list in genes:
-        if len(keep_genes) == 0:
-            keep_genes = set(gene_list)
-        else:
-            keep_genes &= set(gene_list)
-    if verbose:
-        print('Found {} genes among all datasets'
-              .format(len(keep_genes)))
-
-    # Only keep genes in common.
-    ret_datasets = []
-    ret_genes = np.array(sorted(keep_genes))
+def save_datasets(datasets, genes, data_names, verbose=True,
+                  truncate_neg=False):
     for i in range(len(datasets)):
-        # Remove duplicate genes.
-        uniq_genes, uniq_idx = np.unique(genes[i], return_index=True)
-        ret_datasets.append(datasets[i][:, uniq_idx])
+        dataset = datasets[i]
+        name = data_names[i]
 
-        # Do gene filtering.
-        gene_sort_idx = np.argsort(uniq_genes)
-        gene_idx = [ idx for idx in gene_sort_idx
-                     if uniq_genes[idx] in keep_genes ]
-        ret_datasets[i] = ret_datasets[i][:, gene_idx]
-        assert(np.array_equal(uniq_genes[gene_idx], ret_genes))
+        if truncate_neg:
+            dataset[dataset < 0] = 0
 
-    return ret_datasets, ret_genes
+        with open(name + '.scanorama_corrected.txt', 'w') as of:
+            # Save header.
+            of.write('Genes\t')
+            of.write('\t'.join(
+                [ 'cell' + str(cell) for cell in range(dataset.shape[0]) ]
+            ) + '\n')
+
+            for g in range(dataset.shape[1]):
+                of.write(genes[g] + '\t')
+                of.write('\t'.join(
+                    [ str(expr) for expr in dataset[:, g] ]
+                ) + '\n')
 
 if __name__ == '__main__':
+    from config import data_names
+
     for name in data_names:
         if os.path.isdir(name):
             process_mtx(name)

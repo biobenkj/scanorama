@@ -1,6 +1,8 @@
 import numpy as np
+from scipy.stats import ttest_ind
 from unsupervised import silhouette_samples as sil
-from utils import plt
+
+from scanorama import plt
 
 if __name__ == '__main__':
     labels = np.array(
@@ -24,6 +26,10 @@ if __name__ == '__main__':
     idx = np.random.choice(X.shape[0], size=20000, replace=False)
     sil_cca = sil(X[idx, :], labels[idx])
     print(np.median(sil_cca))
+
+
+    print(ttest_ind(sil_pan, sil_mnn))
+    print(ttest_ind(sil_pan, sil_cca))
     
     plt.figure()
     plt.boxplot([ sil_pan, sil_mnn, sil_cca ], showmeans=True)
